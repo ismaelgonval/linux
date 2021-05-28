@@ -64,3 +64,35 @@ jobs:
           yaml_content = yaml.safe_load(base64.b64decode(body["content"]))
 
           print(json.dumps(yaml_content, indent=2))
+
+  read-config-action:
+    name: Read configuration using Action
+    runs-on: ubuntu-20.04
+    outputs:
+      config: ${{ steps.parse.outputs.config }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: ismaelgonval/actions-sandbox
+
+      - name: Get content
+        id: read
+        uses: ./actions/get-content
+        with:
+          repository: ${{ github.repository }}
+          file: ${{ env.YAML_FILE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref }}
+
+      - name: Read configuration from file
+        id: parse
+        shell: python
+        run: |
+          import json
+          import yaml
+
+          yaml_content = yaml.safe_load("${{ steps.read.outputs.content }}")
+
+          print(json.dumps(yaml_content, indent=2))
