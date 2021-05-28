@@ -1,14 +1,66 @@
-name: generalized-workflow
+name: fetch-test
 
-on:
-  workflow_dispatch:
+env:
+  WORKFLOW_VERSION: workflow_version
+  WORKFLOW_CONFIG: drivers/staging/hikey9xx/phy-hi3670-usb3.yaml
 
 jobs:
-  checkout:
-    name: Checkout
+  read-config:
+    name: Read configuration
     runs-on: ubuntu-20.04
+    outputs:
+      config: ${{ steps.read.outputs.config }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           ref: ${{ github.sha }}
+
+      - name: Read configuration from file
+        id: read
+        shell: python
+        run: |
+          import json
+          import yaml
+
+          with open('${{ env.WORKFLOW_CONFIG }}') as f:
+            github_config = yaml.safe_load(f)
+
+          github_config = yaml.safe_load(base64.b64decode(body["content"]))
+
+          print(json.dumps(github_config, indent=2))
+
+  read-config-api:
+    name: Read configuration using GitHub API
+    runs-on: ubuntu-20.04
+    outputs:
+      config: ${{ steps.read.outputs.config }}
+
+    steps:
+      - name: Read configuration from file
+        id: read
+        shell: python
+        run: |
+          import base64
+          import json
+          import os
+          import yaml
+          import requests
+          from requests.models import HTTPBasicAuth
+
+          github_api_url = os.environ.get("GITHUB_API_URL")
+
+          url = (
+            github_api_url
+            + "/repos/${{ github.repository }}"
+            + "/contents/${{ env.WORKFLOW_CONFIG }}?ref=${{ github.ref }}"
+          )
+
+          headers = { "authorization": "Bearer ${{ secrets.GITHUB_TOKEN }}" }
+          res = requests.get(url, headers=headers)
+
+          body = json.loads(res.content)
+          github_config = yaml.safe_load(base64.b64decode(body["content"]))
+
+          print(json.dumps(github_config, indent=2))
