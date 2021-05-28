@@ -1,8 +1,10 @@
 name: fetch-test
 
+on:
+  workflow_dispatch:
+
 env:
-  WORKFLOW_VERSION: workflow_version
-  WORKFLOW_CONFIG: drivers/staging/hikey9xx/phy-hi3670-usb3.yaml
+  YAML_FILE: drivers/staging/hikey9xx/phy-hi3670-usb3.yaml
 
 jobs:
   read-config:
@@ -24,12 +26,10 @@ jobs:
           import json
           import yaml
 
-          with open('${{ env.WORKFLOW_CONFIG }}') as f:
-            github_config = yaml.safe_load(f)
+          with open('${{ env.YAML_FILE }}') as f:
+            yaml_content = yaml.safe_load(f)
 
-          github_config = yaml.safe_load(base64.b64decode(body["content"]))
-
-          print(json.dumps(github_config, indent=2))
+          print(json.dumps(yaml_content, indent=2))
 
   read-config-api:
     name: Read configuration using GitHub API
@@ -54,13 +54,13 @@ jobs:
           url = (
             github_api_url
             + "/repos/${{ github.repository }}"
-            + "/contents/${{ env.WORKFLOW_CONFIG }}?ref=${{ github.ref }}"
+            + "/contents/${{ env.YAML_FILE }}?ref=${{ github.ref }}"
           )
 
           headers = { "authorization": "Bearer ${{ secrets.GITHUB_TOKEN }}" }
           res = requests.get(url, headers=headers)
 
           body = json.loads(res.content)
-          github_config = yaml.safe_load(base64.b64decode(body["content"]))
+          yaml_content = yaml.safe_load(base64.b64decode(body["content"]))
 
-          print(json.dumps(github_config, indent=2))
+          print(json.dumps(yaml_content, indent=2))
