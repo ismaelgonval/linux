@@ -76,6 +76,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: ismaelgonval/actions-sandbox
+          ref: master
 
       - name: Get content
         id: read
